@@ -1,0 +1,28 @@
+{
+    "flags": 32768,
+    "components": [
+      {
+        "type": 17,
+        "components": [
+          {
+            "type": 9,
+            "components": [
+              {
+                "type": 10,
+                "content": "# ¡Gracias por apoyarnos! <:MS_Pat_2:1000994569573376020>\n¡Hey, {MEMBER_ID}! Te agradecemos por promocionar nuestro\nnservidor en tu perfil, el **meetspace** te luce muy bien.\n\n> Has recibido el rol: {ROLE_ID}\n\n-# Si te retiras la vanity, perderás el rol automáticamente"
+              }
+            ],
+            "accessory": {
+              "type": 11,
+              "media": {
+                "url": "" 
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "allowed_mentions": {
+      "parse": []
+    }
+  }
