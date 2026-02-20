@@ -4,7 +4,7 @@
   "description": "Presence-aware Discord bot that grants a vanity role when members advertise your invite.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src/index.js"
   },
   "author": "joshiny",
   "license": "MIT",
@@ -16,7 +16,9 @@
     "dotenv": "^16.4.5",
     "ioredis": "^5.6.1",
     "pg": "^8.18.0",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "winston": "^3.11.0",
+    "express": "^4.18.2"
   },
   "keywords": [],
   "type": "commonjs"

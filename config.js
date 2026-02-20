@@ -16,6 +16,7 @@ module.exports = {
         vanity_role_system_channel_id: process.env.VANITY_CHANNEL_ID || "",
         vanity_role_system_status_text: process.env.VANITY_KEYWORD || "",
         webhook_url: process.env.WEBHOOK_URL || "",
+        alert_webhook_url: process.env.ALERT_WEBHOOK_URL || "",
     },
     VIP: {
         colorPickerTitle: "Zona VIP・Colores exclusivos <:MS_CatPeek:1472492895729750116>",

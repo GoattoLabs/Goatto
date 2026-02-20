@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -50,30 +50,54 @@ module.exports = {
             return await interaction.showModal(modal);
         }
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
+            // Validar que el bot puede enviar mensajes en el canal
+            if (!interaction.channel.permissionsFor(interaction.guild.members.me)?.has("SendMessages")) {
+                return await interaction.editReply('❌ No tengo permisos para enviar mensajes en este canal.');
+            }
+
             if (idInput) {
                 let messageId = idInput.includes('/') ? idInput.split('/').pop() : idInput;
 
                 if (!/^\d+$/.test(messageId)) {
-                    return interaction.editReply('❌ ID o Link inválido.');
+                    return await interaction.editReply('❌ ID o Link inválido.');
                 }
 
-                const target = await interaction.channel.messages.fetch(messageId);
-                await target.reply({ 
-                    content,
-                    allowedMentions: { repliedUser: false } 
-                });
+                try {
+                    const target = await interaction.channel.messages.fetch(messageId);
+                    
+                    // Validar que el bot puede responder al mensaje
+                    if (!target) {
+                        return await interaction.editReply('❌ Mensaje no encontrado.');
+                    }
+
+                    await target.reply({ 
+                        content,
+                        allowedMentions: { repliedUser: false } 
+                    });
+                    
+                    const logger = require("../services/logger");
+                    logger.info(`[COMMAND] ✅ /say ejecutado por ${interaction.user.tag} en ${interaction.guild.name} (respondiendo a ${messageId})`);
+                } catch (fetchError) {
+                    if (fetchError.code === 10008) { // Unknown Message
+                        return await interaction.editReply('❌ Mensaje no encontrado. Verifica que el ID sea correcto y que el mensaje esté en este canal.');
+                    }
+                    throw fetchError;
+                }
             } else {
                 await interaction.channel.send(content);
+                const logger = require("../services/logger");
+                logger.info(`[COMMAND] ✅ /say ejecutado por ${interaction.user.tag} en ${interaction.guild.name}`);
             }
 
-            await interaction.deleteReply().catch(_ => {});
+            await interaction.deleteReply().catch(() => {});
 
         } catch (err) {
-            console.error("[ERROR /SAY]:", err);
-            await interaction.editReply('❌ No se pudo enviar el mensaje.').catch(o_O => {});
+            const logger = require("../services/logger");
+            logger.error("[ERROR /SAY]:", err);
+            await interaction.editReply('❌ No se pudo enviar el mensaje.').catch(() => {});
         }
     },
 };
