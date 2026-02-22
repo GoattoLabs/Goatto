@@ -1,15 +1,22 @@
 import 'dotenv/config';
-import { GatewayIntentBits, Partials } from 'discord.js';
+import './structures/Redis'; 
+import { connectDB } from './database/db';
 import { PattoClient } from './structures/PattoClient';
+import { container } from '@sapphire/framework';
 
-const client = new PattoClient({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildPresences,
-        GatewayIntentBits.GuildMessages
-    ],
-    partials: [Partials.GuildMember, Partials.User]
-});
+const client = new PattoClient();
 
-client.start(process.env.DISCORD_TOKEN!);
+async function bootstrap() {
+    try {
+        await connectDB();
+
+        await client.start(process.env.DISCORD_TOKEN!);
+        
+    } catch (error) {
+        container.logger.error('🔴 [BOOTSTRAP] Fatal error during startup:', error);
+        
+        process.exit(1);
+    }
+}
+
+bootstrap();
