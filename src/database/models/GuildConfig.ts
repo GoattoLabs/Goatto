@@ -47,5 +47,5 @@ export class GuildConfig extends Model {
         defaultValue: false,
         field: 'vanity_module'
     })
-    declare vanityEnabled: boolean;
+    declare vanityModule: boolean;
 }
