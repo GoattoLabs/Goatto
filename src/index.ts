@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import './structures/Redis'; 
+import './database/Redis'; 
 import { connectDB } from './database/db';
 import { PattoClient } from './structures/PattoClient';
 import { container } from '@sapphire/framework';
