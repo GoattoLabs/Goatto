@@ -3,7 +3,11 @@ import { container } from '@sapphire/framework';
 import { GuildConfig } from './models/GuildConfig';
 import 'dotenv/config';
 
-export const sequelize = new Sequelize(process.env.DATABASE_URL!, {
+if (!process.env.DATABASE_URL) {
+    throw new Error('🔴 [DATABASE] DATABASE_URL environment variable is missing!');
+}
+
+export const sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: false,
     models: [GuildConfig],
@@ -21,16 +25,15 @@ export const connectDB = async () => {
         container.logger.info('🟢 [DATABASE] Connected to PostgreSQL.');
         
         await sequelize.sync({ alter: true });
-        container.logger.info('♾️ [DATABASE] Tables synchronized successfully.');
+        container.logger.info('📊 [DATABASE] Tables synchronized successfully.');
     } catch (error) {
         container.logger.error('🔴 [DATABASE] Connection error:', error);
-        throw error; 
+        process.exit(1);
     }
 };
 
 declare module '@sapphire/pieces' {
     interface Container {
         db: Sequelize;
-        redis: import('ioredis').Redis;
     }
 }
