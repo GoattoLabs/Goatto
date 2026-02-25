@@ -1,3 +1,9 @@
+// Imports for Vanity Module - Info embed (line 109)
+import type { GuildConfig } from '../../database/models/GuildConfig';
+import type { Guild } from 'discord.js';
+
+const pastelColors = [16110577, 13890037, 13884661, 15520757, 16110559, 13891047, 16118739, 15775651, 10744012, 10744048, 11117552];
+
 // Module reset - Ask embed
 export function getResetLayout(confirmId: string, cancelId: string) {
     return {
@@ -81,6 +87,7 @@ export function getVanityWelcomeLayout(memberId: string, roleId: string, avatarU
         components: [
             {
                 type: 17,
+                accent_color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
                 components: [
                     {
                         type: 9,
@@ -98,6 +105,94 @@ export function getVanityWelcomeLayout(memberId: string, roleId: string, avatarU
                 ]
             }
         ],
-        allowed_mentions: { parse: ["users"] }
+        allowed_mentions: { parse: ["users"], roles: [] }
+    };
+}
+
+// Vanity Module - Settings & Setup layout
+export const getModuleLayout = (moduleName: string, config: any, guild: any, isSetupSuccess = false) => {
+    const isEnabled = (config as any)[`${moduleName}Module`];
+    const displayName = moduleName === 'vanity' ? 'Vanity Tracker' : 'Module';
+
+    const bulletEnabled = '<a:enabled_setting:1475900750235304146>';
+    const bulletDisabled = '<a:disabled_setting:1475900748545003611>';
+
+    let details = "";
+    if (moduleName === 'vanity') {
+        const role = guild.roles.cache.get(config.vanityRoleId ?? '');
+
+        const keywordBullet = config.vanityString ? bulletEnabled : bulletDisabled;
+        const roleBullet = config.vanityRoleId ? bulletEnabled : bulletDisabled;
+        const channelBullet = config.vanityChannelId ? bulletEnabled : bulletDisabled;
+
+        details = `${keywordBullet} **Keyword**: \`${config.vanityString || 'Not set'}\`\n` +
+                  `${roleBullet} **Role**: ${config.vanityRoleId ? `<@&${config.vanityRoleId}>` : '`Not set`'}\n` +
+                  `${channelBullet} **Channel**: ${config.vanityChannelId ? `<#${config.vanityChannelId}>` : '`Not set`'}`;
+        
+        if (!isSetupSuccess) {
+            details += `\n<a:static_setting:1475918470758797383> **Users with vanity**: \`${role ? role.members.size : 0}\``;
+        }
+    }
+
+    const actionCommand = isSetupSuccess 
+        ? (isEnabled 
+            ? `\n\n-# Use </module disable:1475038787796205760> to disable this module.`
+            : `\n\n-# Use </module enable:1475038787796205760> to enable this module.`)
+        : "";
+
+    const title = isSetupSuccess ? `## ${displayName} Setup` : `## ${displayName} Configuration`;
+
+    return {
+        flags: 32768, 
+        components: [
+            {
+                type: 17,
+                components: [
+                    {
+                        type: 9,
+                        components: [
+                            {
+                                type: 10,
+                                content: `${title}\n\n${details}${actionCommand}`
+                            }
+                        ],
+                        accessory: {
+                            type: 2,
+                            style: 2,
+                            label: isEnabled ? 'Enabled' : 'Disabled',
+                            disabled: true,
+                            custom_id: `status_${moduleName}`,
+                            emoji: {
+                                id: isEnabled ? "1475217017232560393" : "1475217050132549836"
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    };
+};
+
+// Module Enabled/Disabled layout
+export function getStatusUpdateLayout(displayName: string, isEnabled: boolean) {
+    const emoji = isEnabled 
+        ? '<a:enabled_setting:1475900750235304146>' 
+        : '<a:disabled_setting:1475900748545003611>';
+    
+    const state = isEnabled ? 'enabled' : 'disabled';
+
+    return {
+        flags: 32768,
+        components: [
+            {
+                type: 17,
+                components: [
+                    {
+                        type: 10,
+                        content: `${emoji} **${displayName}** module is now ${state}.`
+                    }
+                ]
+            }
+        ]
     };
 }
