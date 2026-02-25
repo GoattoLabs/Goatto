@@ -19,16 +19,20 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@sapphire/decorators": "^6.2.0",
     "@sapphire/framework": "^5.5.0",
     "@sapphire/pieces": "^4.4.1",
     "@sapphire/plugin-logger": "^4.1.0",
     "@sapphire/plugin-subcommands": "^7.0.1",
-    "bullmq": "^5.69.4",
+    "bullmq": "^5.70.0",
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1",
+    "eslint": "^8.52.0",
     "ioredis": "^5.9.3",
     "pg": "^8.18.0",
     "pg-hstore": "^2.3.4",
+    "prettier": "^3.1.0",
+    "prettier-eslint": "^16.1.2",
     "sequelize": "^6.37.7",
     "sequelize-typescript": "^2.1.6",
     "winston": "^3.19.0"
