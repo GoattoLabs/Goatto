@@ -1,6 +1,8 @@
 import { Listener } from '@sapphire/framework';
 import { Events } from 'discord.js';
 import { GuildConfig } from '../database/models/GuildConfig';
+import { CacheManager } from '../database/CacheManager';
+import { setupVanityWorker } from '../workers/VanityWorker';
 
 export class ReadyListener extends Listener {
     public constructor(context: Listener.LoaderContext, options: Listener.Options) {
@@ -13,24 +15,24 @@ export class ReadyListener extends Listener {
 
     public async run() {
         const { container } = this;
-        container.logger.info(`[SYSTEM] Logged in as ${container.client.user?.tag}`);
-
+        container.logger.info(`🦆 [BOT] Logged in as ${container.client.user?.tag}`);
+    
         try {
             const configs = await GuildConfig.findAll();
             
-            for (const config of configs) {
-                const { guildId, vanityString, vanityRoleId, vanityEnabled, vanityChannelId } = config;
-                
-                if (vanityString) await container.redis.set(`vanity:string:${guildId}`, vanityString);
-                if (vanityRoleId) await container.redis.set(`vanity:role:${guildId}`, vanityRoleId);
-                if (vanityChannelId) await container.redis.set(`vanity:channel:${guildId}`, vanityChannelId);
-                
-                await container.redis.set(`vanity:enabled:${guildId}`, String(vanityEnabled));
+            if (configs.length === 0) {
+                container.logger.info('[SYNC] No configurations found in database to cache.');
+            } else {
+                await Promise.all(
+                    configs.map((config) => CacheManager.syncGuild(config.guildId, config))
+                );
+                container.logger.info(`📊 [REDIS] Redis cache warmed up with ${configs.length} configs via CacheManager.`);
             }
+
+            setupVanityWorker();
             
-            container.logger.info(`[SYNC] Redis cache warmed up with ${configs.length} configs.`);
         } catch (error) {
-            container.logger.error('[SYNC] Failed to warm up Redis:', error);
+            container.logger.error('[SYNC] Failed to warm up Redis or start Worker:', error);
         }
     }
 }
