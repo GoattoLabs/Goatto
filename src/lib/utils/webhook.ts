@@ -13,24 +13,33 @@ export async function sendPattoLog(channel: TextChannel, payload: string | any) 
             webhook = await channel.createWebhook({
                 name: 'Patto',
                 avatar: channel.client.user?.displayAvatarURL(),
-                reason: 'Sistema automático de Vanity Tracker de Patto'
+                reason: 'Sistema automático de logs de Patto'
             });
         }
 
         const webhookUrlWithComponents = `${webhook.url}?with_components=true`;
         const webhookClient = new WebhookClient({ url: webhookUrlWithComponents });
 
-        const dataToSend = typeof payload === 'string' 
-            ? {
+        let dataToSend;
+
+        if (typeof payload === 'string') {
+            dataToSend = {
                 components: [{
                     type: 17,
                     components: [{
                         type: 10,
                         content: payload
                     }]
-                }]
-              }
-            : payload;
+                }],
+                allowedMentions: { parse: ['users'], roles: [] }
+            };
+        } else {
+            dataToSend = {
+                ...payload,
+                allowedMentions: payload.allowed_mentions || { parse: ['users'], roles: [] }
+            };
+            delete dataToSend.allowed_mentions;
+        }
 
         await webhookClient.send(dataToSend);
 
