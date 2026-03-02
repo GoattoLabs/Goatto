@@ -4,22 +4,22 @@ import { TextChannel, WebhookClient } from 'discord.js';
 // Webhook ──────────────────
 
 
-// Sends a payload to a channel via Patto's webhook, creating it if it doesn't exist ──────────
+// Sends a payload to a channel via Caramel's webhook, creating it if it doesn't exist ──────────
 
-export async function sendPattoLog(channel: TextChannel, payload: string | any) {
+export async function sendCaramelLog(channel: TextChannel, payload: string | any) {
     try {
         const webhooks = await channel.fetchWebhooks();
 
         let webhook = webhooks.find(wh =>
-            wh.name === 'Patto' &&
+            wh.name === 'Caramel' &&
             wh.owner?.id === channel.client.user?.id
         );
 
         if (!webhook) {
             webhook = await channel.createWebhook({
-                name: 'Patto',
+                name: 'Caramel',
                 avatar: channel.client.user?.displayAvatarURL(),
-                reason: 'Patto automatic log system'
+                reason: 'Caramel automatic log system'
             });
         }
 

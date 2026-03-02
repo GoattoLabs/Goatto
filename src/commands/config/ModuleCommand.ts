@@ -165,7 +165,7 @@ export class ModuleCommand extends Subcommand {
         super(context, {
             ...options,
             name: 'module',
-            description: 'Manage PattoLabs system modules',
+            description: 'Manage CaramelLabs system modules',
             preconditions: ['GuildOnly'],
             subcommands: [
                 { name: 'setup',    chatInputRun: 'chatInputSetup'    },
@@ -341,7 +341,7 @@ export class ModuleCommand extends Subcommand {
                     const newRole = await guild!.roles.create({
                         name:   mutedRoleRaw || 'Muted',
                         color:  0x818386,
-                        reason: 'Patto - Muted role auto-created'
+                        reason: 'Caramel - Muted role auto-created'
                     });
                     config.mutedRoleId = newRole.id;
                     summaryActions.push(`Role created: <@&${newRole.id}>`);

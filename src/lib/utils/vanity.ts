@@ -2,7 +2,7 @@ import { GuildMember, ActivityType, TextChannel } from 'discord.js';
 import { container } from '@sapphire/framework';
 import { Queue } from 'bullmq';
 import { getVanityWelcomeLayout } from './layouts';
-import { sendPattoLog } from './webhook';
+import { sendCaramelLog } from './webhook';
 import { Redis } from 'ioredis';
 
 
@@ -22,7 +22,7 @@ function getQueue() {
 
         _vanityQueue = new Queue('vanity-roles', {
             connection: queueConnection as any,
-            prefix: 'patto-vanity'
+            prefix: 'caramel-vanity'
         });
     }
     return _vanityQueue;
@@ -88,7 +88,7 @@ export async function checkVanity(member: GuildMember) {
                 if (channel) {
                     const avatar = member.user.displayAvatarURL({ extension: 'png', size: 512 });
                     const welcomeLayout = getVanityWelcomeLayout(member.id, vanityRoleId, avatar);
-                    sendPattoLog(channel, welcomeLayout).catch((err) => logger.error(`[LOG-ERROR] ${err}`));
+                    sendCaramelLog(channel, welcomeLayout).catch((err) => logger.error(`[LOG-ERROR] ${err}`));
                 }
             }
         } else if (!hasKeyword && hasRole) {

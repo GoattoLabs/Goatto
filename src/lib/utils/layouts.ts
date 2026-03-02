@@ -127,7 +127,7 @@ export function getModuleSetupConfirmLayout(confirmId: string, cancelId: string,
             components: [
                 {
                     type: 10,
-                    content: `## ${data.moduleName} Setup\n\nPatto will do the following in your server:\n\n${actionsText}\n\nDo you want to continue?`
+                    content: `## ${data.moduleName} Setup\n\nCaramel will do the following in your server:\n\n${actionsText}\n\nDo you want to continue?`
                 },
                 divider(),
                 {
@@ -401,7 +401,7 @@ export function getModChannelPromptLayout(createId: string, manualId: string) {
         {
             type: 17,
             components: [
-                { type: 10, content: `${Emojis.static_setting_emoji} **Moderation** module requires a log channel.\nDo you want Patto to create and configure one automatically?` },
+                { type: 10, content: `${Emojis.static_setting_emoji} **Moderation** module requires a log channel.\nDo you want Caramel to create and configure one automatically?` },
                 divider(),
                 {
                     type: 1,
