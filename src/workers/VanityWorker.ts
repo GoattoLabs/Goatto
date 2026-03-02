@@ -1,17 +1,22 @@
-import { Worker, Job } from 'bullmq';
+import { Worker, type Job } from 'bullmq';
 import { container } from '@sapphire/framework';
 import { checkVanity } from '../lib/utils/vanity';
 import { Redis } from 'ioredis';
 
+
+// Vanity worker ──────────────────
+
 export function setupVanityWorker() {
     const { logger } = container;
 
-    logger.info('📋 [WORKER] Initialized successfully - Vanity Tracker');
+    logger.info('[WORKER] Initialized successfully - Vanity Tracker');
 
     const workerConnection = new Redis({
         ...container.redis?.options,
-        maxRetriesPerRequest: null,
+        maxRetriesPerRequest: null
     });
+
+    // Job handler ──────────
 
     const worker = new Worker(
         'vanity-roles',
@@ -24,9 +29,8 @@ export function setupVanityWorker() {
                 if (!member) return;
 
                 await checkVanity(member);
-                
             } catch (error) {
-                logger.error(`[WORKER-ERROR] Critical failure in job ${job.id}:`, error);
+                logger.error(`[VANITY-WORKER] Critical failure in job ${job.id}:`, error);
                 throw error;
             }
         },
@@ -43,14 +47,16 @@ export function setupVanityWorker() {
         }
     );
 
-    worker.on('failed', (job, err) => {
-        logger.error(`[VANITY-WORKER] ❌ Job ${job?.id} failed: ${err.message}`);
-    });
+    // Events ──────────
 
-    return worker;
+    worker.on('failed', (job, err) => {
+        logger.error(`[VANITY-WORKER] Job ${job?.id} failed: ${err.message}`);
+    });
 
     worker.on('closed', async () => {
         await workerConnection.quit();
-        logger.info('[VANITY-WORKER] Redis connection closed.');
+        logger.info('[VANITY-WORKER] Redis connection closed');
     });
+
+    return worker;
 }
