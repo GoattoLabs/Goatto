@@ -3,29 +3,35 @@ import { Listener } from '@sapphire/framework';
 import { Presence, Events, ActivityType } from 'discord.js';
 import { addVanityJob } from '../lib/utils/vanity';
 
+
+// Presence update listener ──────────────────
+
 @ApplyOptions<Listener.Options>({
     event: Events.PresenceUpdate
 })
 export class PresenceUpdateListener extends Listener {
     public async run(oldPresence: Presence | null, newPresence: Presence) {
         const { guild, member } = newPresence;
-
         if (!guild || !member || member.user.bot) return;
 
-        const oldStatus = oldPresence?.activities.find(a => a.type === ActivityType.Custom)?.state;
-        const newStatus = newPresence.activities.find(a => a.type === ActivityType.Custom)?.state;
+        const oldState = oldPresence?.activities.find(a => a.type === ActivityType.Custom)?.state ?? null;
+        const newState = newPresence.activities.find(a => a.type === ActivityType.Custom)?.state ?? null;
 
-        this.container.logger.info(`🔗 [VANITY] ${member.user.tag} - Old Status: ${oldStatus} | New Status: ${newStatus}`);
+        if (oldState === newState) return;
 
-        if (oldStatus !== newStatus) {
-            this.container.logger.info(`🔰 [VANITY] Status detected on ${member.user.tag}. Sending job to queue.`);
-            
-            try {
-                await addVanityJob(member);
-                this.container.logger.info(`🟢 [VANITY] Job sent successfuly for ${member.user.tag}`);
-            } catch (error) {
-                this.container.logger.error(`[QUEUE-ERROR] ${error}`);
-            }
+        const vanityString = await this.container.redis.get(`vanity:string:${guild.id}`);
+        if (!vanityString) return;
+
+        const oldHas = oldState?.toLowerCase().includes(vanityString.toLowerCase()) ?? false;
+        const newHas = newState?.toLowerCase().includes(vanityString.toLowerCase()) ?? false;
+
+        if (oldHas === newHas) return;
+
+        try {
+            await addVanityJob(member);
+            this.container.logger.info(`📤 [VANITY] Status update for ${member.user.tag}. Job sent.`);
+        } catch (error) {
+            this.container.logger.error(`[QUEUE-ERROR] ${error}`);
         }
     }
 }
