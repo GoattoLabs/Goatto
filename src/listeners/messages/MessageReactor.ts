@@ -2,20 +2,18 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { Events, type Message } from 'discord.js';
 
+
+// Patto reaction listener ──────────────────
+
 @ApplyOptions<Listener.Options>({
-	event: Events.MessageCreate
+    event: Events.MessageCreate
 })
 export class PattoReactionListener extends Listener {
-	public async run(message: Message) {
-		if (message.author.bot || !message.guild) return;
+    public async run(message: Message) {
+        if (message.author.bot || !message.guild) return;
 
-		const pattoRegex = /\bpatto\b/i;
-
-		if (pattoRegex.test(message.content)) {
-			try {
-				await message.react('🦆');
-			} catch {
-			}
-		}
-	}
+        if (/\bpatto\b/i.test(message.content)) {
+            await message.react('🦆').catch(() => {});
+        }
+    }
 }
