@@ -1,11 +1,17 @@
 import { GuildMember, ActivityType, TextChannel } from 'discord.js';
 import { container } from '@sapphire/framework';
 import { Queue } from 'bullmq';
-import { getVanityWelcomeLayout } from './layouts'; 
+import { getVanityWelcomeLayout } from './layouts';
 import { sendPattoLog } from './webhook';
 import { Redis } from 'ioredis';
 
+
+// Vanity utils ──────────────────
+
 let _vanityQueue: Queue | null = null;
+
+
+// Returns (or creates) the vanity role queue ──────────
 
 function getQueue() {
     if (!_vanityQueue) {
@@ -13,8 +19,8 @@ function getQueue() {
             ...container.redis?.options,
             maxRetriesPerRequest: null,
         });
-    
-        _vanityQueue = new Queue('vanity-roles', { 
+
+        _vanityQueue = new Queue('vanity-roles', {
             connection: queueConnection as any,
             prefix: 'patto-vanity'
         });
@@ -22,14 +28,16 @@ function getQueue() {
     return _vanityQueue;
 }
 
+
+// Adds a vanity role check job to the queue ──────────
+
 export async function addVanityJob(member: GuildMember) {
     try {
         const queue = getQueue();
-        const job = await queue.add(
+        await queue.add(
             'check-role',
             { memberId: member.id, guildId: member.guild.id },
             {
-                // jobId: `vanity-${member.id}`,
                 attempts: 3,
                 backoff: { type: 'exponential', delay: 1000 },
                 removeOnComplete: true,
@@ -41,6 +49,9 @@ export async function addVanityJob(member: GuildMember) {
         container.logger.error(`[QUEUE-FATAL] Could not add job: ${error}`);
     }
 }
+
+
+// Checks if a member should have the vanity role and adds/removes it accordingly ──────────
 
 export async function checkVanity(member: GuildMember) {
     const { guild } = member;
@@ -56,17 +67,13 @@ export async function checkVanity(member: GuildMember) {
             `vanity:log_channel:${guild.id}`
         );
 
-        if (!vanityModule || (vanityModule !== 'true' && vanityModule !== '1') || !vanityString || !vanityRoleId) {
-            return;
-        }
+        if (!vanityModule || (vanityModule !== 'true' && vanityModule !== '1') || !vanityString || !vanityRoleId) return;
 
         const currentStatus = member.presence?.activities.find(a => a.type === ActivityType.Custom)?.state;
-
         const hasKeyword = currentStatus?.toLowerCase().includes(vanityString.toLowerCase());
         const hasRole = member.roles.cache.has(vanityRoleId);
 
         const role = guild.roles.cache.get(vanityRoleId) || await guild.roles.fetch(vanityRoleId).catch(() => null);
-
         if (!role) {
             logger.warn(`[VANITY] Role ${vanityRoleId} not found in ${guild.name}`);
             return;
@@ -84,8 +91,7 @@ export async function checkVanity(member: GuildMember) {
                     sendPattoLog(channel, welcomeLayout).catch((err) => logger.error(`[LOG-ERROR] ${err}`));
                 }
             }
-        }
-        else if (!hasKeyword && hasRole) {
+        } else if (!hasKeyword && hasRole) {
             await member.roles.remove(role);
             logger.info(`➖ [VANITY] Role removed from ${member.user.tag}`);
         }
