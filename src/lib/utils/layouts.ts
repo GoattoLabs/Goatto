@@ -1,198 +1,436 @@
-// Imports for Vanity Module - Info embed (line 109)
 import type { GuildConfig } from '../../database/models/GuildConfig';
 import type { Guild } from 'discord.js';
+import { Emojis } from '../constants/emojis';
 
-const pastelColors = [16110577, 13890037, 13884661, 15520757, 16110559, 13891047, 16118739, 15775651, 10744012, 10744048, 11117552];
 
-// Module reset - Ask embed
-export function getResetLayout(confirmId: string, cancelId: string) {
+// Constants ────────────────────
+
+const PASTEL_COLORS = [
+    16110577, 13890037, 13884661, 15520757, 16110559,
+    13891047, 16118739, 15775651, 10744012, 10744048, 11117552
+] as const;
+
+function randomPastel() {
+    return PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
+}
+
+
+// Base message prettier layout ────────────────────
+
+function textContainer(content: string, accentColor?: number) {
     return {
-        flags: 32768,
-        components: [
-            {
-                type: 17,
-                components: [
-                    {
-                        type: 10,
-                        content: "<:reset_module:1475023127795994786> Are you sure you want to factory reset this module?"
-                    },
-                    {
-                        type: 14,
-                        spacing: 2,
-                        divider: true
-                    },
-                    {
-                        type: 1,
-                        components: [
-                            {
-                                style: 4,
-                                type: 2,
-                                custom_id: confirmId,
-                                label: "⠀⠀⠀⠀⠀⠀Yes⠀⠀⠀⠀⠀⠀"
-                            },
-                            {
-                                style: 2,
-                                type: 2,
-                                custom_id: cancelId,
-                                label: "⠀⠀⠀⠀⠀⠀No⠀⠀⠀⠀⠀⠀"
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
+        type: 17,
+        ...(accentColor !== undefined && { accent_color: accentColor }),
+        components: [{ type: 10, content }]
     };
 }
 
-// Module reset - Success embed
-export function getSuccessLayout(moduleName: string) {
-    return {
-        flags: 32768,
-        components: [
-            {
-                type: 17,
-                components: [
-                    {
-                        type: 10,
-                        content: `<:success_task:1475030459636514838> The **${moduleName}** module has been reset to its default values.`
-                    }
-                ]
-            }
-        ]
-    };
+function divider(spacing = 2) {
+    return { type: 14, spacing, divider: true };
 }
 
-// Module reset - Cancelled / Timed out embed
+function flaggedResponse(components: object[]) {
+    return { flags: 32768, components } as any;
+}
+
+
+// Conditional layouts ────────────────────
+
+
+// Operation cancelled layout ──────────
+
 export function getCancelledLayout() {
-    return {
-        flags: 32768,
-        components: [
-            {
-                type: 17,
-                components: [
-                    {
-                        type: 10,
-                        content: "<:cancelled_task:1475033067784765470> Module reset operation was cancelled."
-                    }
-                ]
-            }
-        ]
-    };
+    return flaggedResponse([
+        textContainer(`${Emojis.disabled_setting_emoji} Module reset operation was cancelled.`)
+    ]);
 }
 
-// Vanity Module - Channel log Message
+
+// Operation timed out layout ──────────
+
+export function getTimeoutLayout() {
+    return flaggedResponse([
+        textContainer('⏱️ This operation has timed out.')
+    ]);
+}
+
+
+// Module status layouts ────────────────────
+
+// Enabled/Disabled layout ──────────
+
+export function getStatusUpdateLayout(displayName: string, isEnabled: boolean) {
+    const emoji = isEnabled ? Emojis.enabled_setting_emoji : Emojis.disabled_setting_emoji;
+    const state = isEnabled ? 'enabled' : 'disabled';
+
+    return flaggedResponse([
+        textContainer(`${emoji} **${displayName}** module is now ${state}.`)
+    ]);
+}
+
+
+// Module already enabled layout ──────────
+
+export function getAlreadyEnabledLayout(moduleName: string) {
+    return flaggedResponse([
+        textContainer(`${Emojis.static_setting_emoji} **${moduleName}** module is already enabled.`)
+    ]);
+}
+
+
+// Module reset layouts ────────────────────
+
+// Confirmation before resetting a module layout ──────────
+
+export function getResetLayout(confirmId: string, cancelId: string) {
+    return flaggedResponse([
+        {
+            type: 17,
+            components: [
+                { type: 10, content: `${Emojis.reset_module_emoji} Are you sure you want to factory reset this module?` },
+                divider(),
+                {
+                    type: 1,
+                    components: [
+                        { type: 2, style: 4, custom_id: confirmId, label: '⠀⠀⠀⠀⠀⠀Yes⠀⠀⠀⠀⠀⠀' },
+                        { type: 2, style: 2, custom_id: cancelId,  label: '⠀⠀⠀⠀⠀⠀No⠀⠀⠀⠀⠀⠀' }
+                    ]
+                }
+            ]
+        }
+    ]);
+}
+
+
+// Module successfully reset layout ──────────
+
+export function getSuccessLayout(moduleName: string) {
+    return flaggedResponse([
+        textContainer(`${Emojis.enabled_setting_emoji} The **${moduleName}** module has been reset to its default values.`)
+    ]);
+}
+
+
+// Module setup layouts ────────────────────
+
+// Module pre-do actions - ask layout ──────────
+
+export function getModuleSetupConfirmLayout(confirmId: string, cancelId: string, data: {
+    moduleName: string;
+    actions: string[];
+}) {
+    const actionsText = data.actions.map(a => `${Emojis.static_setting_emoji} ${a}`).join('\n');
+
+    return flaggedResponse([
+        {
+            type: 17,
+            components: [
+                {
+                    type: 10,
+                    content: `## ${data.moduleName} Setup\n\nPatto will do the following in your server:\n\n${actionsText}\n\nDo you want to continue?`
+                },
+                divider(),
+                {
+                    type: 1,
+                    components: [
+                        { type: 2, style: 1, custom_id: confirmId, label: '⠀⠀⠀⠀Confirm⠀⠀⠀⠀' },
+                        { type: 2, style: 4, custom_id: cancelId,  label: '⠀⠀⠀⠀Cancel⠀⠀⠀⠀' }
+                    ]
+                }
+            ]
+        }
+    ]);
+}
+
+
+// Module setup successfully completed layout ──────────
+
+export function getModuleSetupSummaryLayout(moduleName: string, actions: string[]) {
+    const actionsText = actions.map(a => `${Emojis.enabled_setting_emoji} ${a}`).join('\n');
+
+    return flaggedResponse([
+        textContainer(`## ${moduleName} Setup Complete\n\n${actionsText}\n\n-# Use </module enable:1475038787796205760> to activate this module.`)
+    ]);
+}
+
+
+// Module settings layouts ────────────────────
+
+// Module configuration with enable/disable badge layout ──────────
+
+export const getModuleLayout = (moduleName: string, config: GuildConfig, guild: Guild, isSetupSuccess = false) => {
+    const isEnabled = (config as any)[`${moduleName}Module`] as boolean;
+    const displayName = moduleName === 'vanity' ? 'Vanity Tracker' : moduleName === 'mod' ? 'Moderation' : 'Module';
+
+    const bullet = (value: unknown) => value ? Emojis.enabled_setting_emoji : Emojis.disabled_setting_emoji;
+
+    let details = '';
+
+    if (moduleName === 'vanity') {
+        const role = guild.roles.cache.get(config.vanityRoleId ?? '');
+        details = [
+            `${bullet(config.vanityString)} **Keyword**: \`${config.vanityString || 'Not set'}\``,
+            `${bullet(config.vanityRoleId)} **Role**: ${config.vanityRoleId ? `<@&${config.vanityRoleId}>` : '`Not set`'}`,
+            `${bullet(config.vanityChannelId)} **Channel**: ${config.vanityChannelId ? `<#${config.vanityChannelId}>` : '`Not set`'}`,
+            ...(!isSetupSuccess ? [`${Emojis.static_setting_emoji} **Users with vanity**: \`${role ? role.members.size : 0}\``] : [])
+        ].join('\n');
+    }
+
+    if (moduleName === 'mod') {
+        details = [
+            `${bullet(config.modLogChannelId)} **Log Channel**: ${config.modLogChannelId ? `<#${config.modLogChannelId}>` : '`Not set`'}`,
+            `${bullet(config.mutedRoleId)} **Muted Role**: ${config.mutedRoleId ? `<@&${config.mutedRoleId}>` : '`Not set`'}`
+        ].join('\n');
+    }
+
+    const actionHint = isSetupSuccess
+        ? `\n\n-# Use </module ${isEnabled ? 'disable' : 'enable'}:1475038787796205760> to ${isEnabled ? 'disable' : 'enable'} this module.`
+        : '';
+
+    const title = isSetupSuccess ? `## ${displayName} Setup` : `## ${displayName} Configuration`;
+
+    return flaggedResponse([
+        {
+            type: 17,
+            components: [
+                {
+                    type: 9,
+                    components: [{ type: 10, content: `${title}\n\n${details}${actionHint}` }],
+                    accessory: {
+                        type: 2,
+                        style: 2,
+                        label: isEnabled ? 'Enabled' : 'Disabled',
+                        disabled: true,
+                        custom_id: `status_${moduleName}`,
+                        emoji: { id: isEnabled ? Emojis.enabled_module_emoji.match(/\d+/)?.[0] : Emojis.disabled_module_emoji.match(/\d+/)?.[0] }
+                    }
+                }
+            ]
+        }
+    ]);
+};
+
+
+// Vanity module layouts ────────────────────
+
+// Module welcome message layout ──────────
+
 export function getVanityWelcomeLayout(memberId: string, roleId: string, avatarURL: string) {
     return {
         flags: 32768,
         components: [
             {
                 type: 17,
-                accent_color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
+                accent_color: randomPastel(),
                 components: [
                     {
                         type: 9,
-                        components: [
-                            {
-                                type: 10,
-                                content: `# ¡Gracias por apoyarnos! <a:thank_you:1475041806335869008>\n¡Hey, <@${memberId}>! Te agradecemos por promocionar nuestro\nservidor en tu perfil, el **meetspace** te luce muy bien.\n\n> Has recibido el rol: <@&${roleId}>\n\n-# Si te retiras la vanity, perderás el rol automáticamente`
-                            }
-                        ],
-                        accessory: {
-                            type: 11,
-                            media: { url: avatarURL }
-                        }
+                        components: [{
+                            type: 10,
+                            content: `# ¡Gracias por apoyarnos! ${Emojis.vanity_welcome_emoji}\n¡Hey, <@${memberId}>! Te agradecemos por promocionar nuestro\nservidor en tu perfil, el **meetspace** te luce muy bien.\n\n> Has recibido el rol: <@&${roleId}>\n\n-# Si te retiras la vanity, perderás el rol automáticamente`
+                        }],
+                        accessory: { type: 11, media: { url: avatarURL } }
                     }
                 ]
             }
         ],
-        allowed_mentions: { parse: ["users"], roles: [] }
+        allowed_mentions: { parse: ['users'], roles: [] }
     };
 }
 
-// Vanity Module - Settings & Setup layout
-export const getModuleLayout = (moduleName: string, config: any, guild: any, isSetupSuccess = false) => {
-    const isEnabled = (config as any)[`${moduleName}Module`];
-    const displayName = moduleName === 'vanity' ? 'Vanity Tracker' : 'Module';
 
-    const bulletEnabled = '<a:enabled_setting:1475900750235304146>';
-    const bulletDisabled = '<a:disabled_setting:1475900748545003611>';
+// Moderation module layouts ────────────────────
 
-    let details = "";
-    if (moduleName === 'vanity') {
-        const role = guild.roles.cache.get(config.vanityRoleId ?? '');
+export type ModAction = 'warn' | 'ban' | 'kick' | 'timeout' | 'unmute';
 
-        const keywordBullet = config.vanityString ? bulletEnabled : bulletDisabled;
-        const roleBullet = config.vanityRoleId ? bulletEnabled : bulletDisabled;
-        const channelBullet = config.vanityChannelId ? bulletEnabled : bulletDisabled;
+const MOD_ACTION_CONFIG: Record<ModAction, { label: string; color: number; emoji: string }> = {
+    warn:    { label: 'Warning', color: 16776960, emoji: '⚠️' },
+    ban:     { label: 'Ban',     color: 15548997, emoji: '🔨' },
+    kick:    { label: 'Kick',    color: 15105570, emoji: '👢' },
+    timeout: { label: 'Timeout', color: 15105570, emoji: '⏱️' },
+    unmute:  { label: 'Unmute',  color: 5763719,  emoji: '🔓' },
+};
 
-        details = `${keywordBullet} **Keyword**: \`${config.vanityString || 'Not set'}\`\n` +
-                  `${roleBullet} **Role**: ${config.vanityRoleId ? `<@&${config.vanityRoleId}>` : '`Not set`'}\n` +
-                  `${channelBullet} **Channel**: ${config.vanityChannelId ? `<#${config.vanityChannelId}>` : '`Not set`'}`;
-        
-        if (!isSetupSuccess) {
-            details += `\n<a:static_setting:1475918470758797383> **Users with vanity**: \`${role ? role.members.size : 0}\``;
-        }
-    }
+const MOD_DM_MESSAGES: Record<ModAction, (guildName: string) => string> = {
+    warn:    (g) => `You have received a **warning** in **${g}**.`,
+    ban:     (g) => `You have been **banned** from **${g}**.`,
+    kick:    (g) => `You have been **kicked** from **${g}**.`,
+    timeout: (g) => `You have been **timed out** in **${g}**.`,
+    unmute:  (g) => `Your timeout in **${g}** has been lifted.`,
+};
 
-    const actionCommand = isSetupSuccess 
-        ? (isEnabled 
-            ? `\n\n-# Use </module disable:1475038787796205760> to disable this module.`
-            : `\n\n-# Use </module enable:1475038787796205760> to enable this module.`)
-        : "";
 
-    const title = isSetupSuccess ? `## ${displayName} Setup` : `## ${displayName} Configuration`;
+// Mod-log message layout ──────────
+
+export function getModLogLayout(data: {
+    action: ModAction;
+    userId: string;
+    userTag: string;
+    moderatorId: string;
+    reason?: string | null;
+    duration?: string | null;
+    warnCount?: number;
+}) {
+    const { label, color, emoji } = MOD_ACTION_CONFIG[data.action];
+
+    const lines = [
+        `${emoji} **${label}**\n`,
+        `${Emojis.static_setting_emoji} **User**: <@${data.userId}> \`${data.userTag}\` \`(${data.userId})\``,
+        `${Emojis.static_setting_emoji} **Moderator**: <@${data.moderatorId}>`,
+        ...(data.reason    ? [`${Emojis.static_setting_emoji} **Reason**: ${data.reason}`]                              : []),
+        ...(data.duration  ? [`${Emojis.static_setting_emoji} **Duration**: ${data.duration}`]                          : []),
+        ...(data.warnCount !== undefined ? [`${Emojis.static_setting_emoji} **Total warnings**: \`${data.warnCount}\``] : []),
+    ];
 
     return {
-        flags: 32768, 
-        components: [
+        flags: 32768,
+        components: [{ type: 17, accent_color: color, components: [{ type: 10, content: lines.join('\n') }] }],
+        allowedMentions: { parse: [], users: [data.userId] }
+    };
+}
+
+
+// DM message to sanctioned user layout ──────────
+
+export function getModDMLayout(data: {
+    action: ModAction;
+    guildName: string;
+    reason?: string | null;
+    duration?: string | null;
+}) {
+    const lines = [
+        MOD_DM_MESSAGES[data.action](data.guildName),
+        ...(data.reason   ? [`\n${Emojis.static_setting_emoji} **Reason**: ${data.reason}`]   : []),
+        ...(data.duration ? [`${Emojis.static_setting_emoji} **Duration**: ${data.duration}`] : []),
+        `\n-# If you believe this was a mistake, please contact the server staff.`
+    ];
+
+    return flaggedResponse([textContainer(lines.join('\n'))]);
+}
+
+
+// Silent-ban module layouts ────────────────────
+
+export type SilentBanAction = 'add' | 'remove' | 'list';
+
+// Add/Remove/List silent-bans layout ──────────
+
+export function getSilentBanLayout(action: SilentBanAction, data?: {
+    userTag?: string;
+    count?: number;
+    listText?: string;
+    duration?: string;
+    reason?: string | null;
+}) {
+
+    // Remove layout ──────────
+
+    if (action === 'remove') {
+        return flaggedResponse([
+            textContainer(`${Emojis.disabled_setting_emoji} The silent ban for **${data?.userTag}** has been removed.`)
+        ]);
+    }
+
+    // List layout ──────────
+
+    if (action === 'list') {
+        return flaggedResponse([
             {
                 type: 17,
                 components: [
                     {
                         type: 9,
-                        components: [
-                            {
-                                type: 10,
-                                content: `${title}\n\n${details}${actionCommand}`
-                            }
-                        ],
+                        components: [{ type: 10, content: `${Emojis.static_setting_emoji} **SILENT BAN LIST**⠀⠀⠀⠀⠀` }],
                         accessory: {
-                            type: 2,
-                            style: 2,
-                            label: isEnabled ? 'Enabled' : 'Disabled',
-                            disabled: true,
-                            custom_id: `status_${moduleName}`,
-                            emoji: {
-                                id: isEnabled ? "1475217017232560393" : "1475217050132549836"
-                            }
+                            type: 2, style: 2, disabled: true,
+                            custom_id: 'silentban_list',
+                            label: `${data?.count ?? 0} ${data?.count === 1 ? 'user' : 'users'}`
                         }
-                    }
+                    },
+                    { type: 14 },
+                    { type: 10, content: data?.listText || '*No active bans*' }
                 ]
             }
-        ]
-    };
-};
+        ]);
+    }
 
-// Module Enabled/Disabled layout
-export function getStatusUpdateLayout(displayName: string, isEnabled: boolean) {
-    const emoji = isEnabled 
-        ? '<a:enabled_setting:1475900750235304146>' 
-        : '<a:disabled_setting:1475900748545003611>';
-    
-    const state = isEnabled ? 'enabled' : 'disabled';
+    // Add layout ──────────
 
-    return {
-        flags: 32768,
-        components: [
-            {
-                type: 17,
-                components: [
-                    {
-                        type: 10,
-                        content: `${emoji} **${displayName}** module is now ${state}.`
+    return flaggedResponse([
+        {
+            type: 17,
+            components: [
+                {
+                    type: 9,
+                    components: [{ type: 10, content: `${Emojis.enabled_setting_emoji} The user **${data?.userTag}** has been silent-banned.` }],
+                    accessory: {
+                        type: 2, style: 2, disabled: true,
+                        custom_id: 'duration',
+                        label: data?.duration || 'Permanent',
+                        emoji: { id: Emojis.timeout_emoji.match(/\d+/)?.[0]! }
                     }
-                ]
-            }
-        ]
-    };
+                },
+                ...(data?.reason ? [
+                    { type: 14 },
+                    { type: 10, content: `${Emojis.static_setting_emoji} **Reason**: ${data.reason}` }
+                ] : [])
+            ]
+        }
+    ]);
+}
+
+
+// Lockdown module layouts ────────────────────
+
+// Lock/Unlock channel message layout ──────────
+
+export function getLockdownLayout(isLocked: boolean) {
+    const emoji = isLocked ? Emojis.channel_locked_emoji : Emojis.channel_unlocked_emoji;
+    const text  = isLocked ? 'This channel has been locked.' : 'This channel has been unlocked.';
+
+    return flaggedResponse([textContainer(`${emoji} ${text}`)]);
+}
+
+
+// Mod channel layouts ────────────────────
+
+// Module enabled but not configured layout ──────────
+
+export function getModChannelPromptLayout(createId: string, manualId: string) {
+    return flaggedResponse([
+        {
+            type: 17,
+            components: [
+                { type: 10, content: `${Emojis.static_setting_emoji} **Moderation** module requires a log channel.\nDo you want Patto to create and configure one automatically?` },
+                divider(),
+                {
+                    type: 1,
+                    components: [
+                        { type: 2, style: 1, custom_id: createId, label: '⠀⠀Create automatically⠀⠀' },
+                        { type: 2, style: 2, custom_id: manualId, label: '⠀⠀Configure manually⠀⠀' }
+                    ]
+                }
+            ]
+        }
+    ]);
+}
+
+
+// Channel auto-created message layout ──────────
+
+export function getModChannelCreatedLayout(channelId: string) {
+    return flaggedResponse([
+        textContainer(`${Emojis.enabled_setting_emoji} Log channel <#${channelId}> created and configured.\n**Moderation** module is now enabled.`)
+    ]);
+}
+
+
+// Instructions for manually configure mod-log channel layout ──────────
+
+export function getModChannelManualLayout() {
+    return flaggedResponse([
+        textContainer(
+            `${Emojis.disabled_setting_emoji} **No problem.** Configure the log channel manually and then enable the module:\n\n\`\`\`\n/module setup name:Moderation channel:#your-channel\n\`\`\`\n\n-# Once configured, use </module enable:1475038787796205760> to activate it.`
+        )
+    ]);
 }
