@@ -2,7 +2,9 @@ import { Listener } from '@sapphire/framework';
 import { Events } from 'discord.js';
 import { GuildConfig } from '../database/models/GuildConfig';
 import { CacheManager } from '../database/CacheManager';
-import { setupVanityWorker } from '../workers/VanityWorker';
+
+
+// Ready listener ──────────────────
 
 export class ReadyListener extends Listener {
     public constructor(context: Listener.LoaderContext, options: Listener.Options) {
@@ -15,24 +17,18 @@ export class ReadyListener extends Listener {
 
     public async run() {
         const { container } = this;
-        container.logger.info(`🦆 [BOT] Logged in as ${container.client.user?.tag}`);
-    
+
         try {
             const configs = await GuildConfig.findAll();
-            
+
             if (configs.length === 0) {
                 container.logger.info('[SYNC] No configurations found in database to cache.');
             } else {
-                await Promise.all(
-                    configs.map((config) => CacheManager.syncGuild(config.guildId, config))
-                );
-                container.logger.info(`📊 [REDIS] Redis cache warmed up with ${configs.length} configs via CacheManager.`);
+                await Promise.all(configs.map((config) => CacheManager.syncGuild(config.guildId, config)));
+                container.logger.info(`📊 [REDIS] Redis cache warmed up with ${configs.length} configs.`);
             }
-
-            setupVanityWorker();
-            
         } catch (error) {
-            container.logger.error('[SYNC] Failed to warm up Redis or start Worker:', error);
+            container.logger.error('[SYNC] Failed to warm up Redis cache:', error);
         }
     }
 }
