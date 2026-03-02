@@ -1,11 +1,17 @@
 import { TextChannel, WebhookClient } from 'discord.js';
 
+
+// Webhook ──────────────────
+
+
+// Sends a payload to a channel via Patto's webhook, creating it if it doesn't exist ──────────
+
 export async function sendPattoLog(channel: TextChannel, payload: string | any) {
     try {
         const webhooks = await channel.fetchWebhooks();
-        
-        let webhook = webhooks.find(wh => 
-            wh.name === 'Patto' && 
+
+        let webhook = webhooks.find(wh =>
+            wh.name === 'Patto' &&
             wh.owner?.id === channel.client.user?.id
         );
 
@@ -13,24 +19,17 @@ export async function sendPattoLog(channel: TextChannel, payload: string | any) 
             webhook = await channel.createWebhook({
                 name: 'Patto',
                 avatar: channel.client.user?.displayAvatarURL(),
-                reason: 'Sistema automático de logs de Patto'
+                reason: 'Patto automatic log system'
             });
         }
 
-        const webhookUrlWithComponents = `${webhook.url}?with_components=true`;
-        const webhookClient = new WebhookClient({ url: webhookUrlWithComponents });
+        const webhookClient = new WebhookClient({ url: `${webhook.url}?with_components=true` });
 
         let dataToSend;
 
         if (typeof payload === 'string') {
             dataToSend = {
-                components: [{
-                    type: 17,
-                    components: [{
-                        type: 10,
-                        content: payload
-                    }]
-                }],
+                components: [{ type: 17, components: [{ type: 10, content: payload }] }],
                 allowedMentions: { parse: ['users'], roles: [] }
             };
         } else {
@@ -42,8 +41,7 @@ export async function sendPattoLog(channel: TextChannel, payload: string | any) 
         }
 
         await webhookClient.send(dataToSend);
-
     } catch (error) {
-        console.error('🔴 [WEBHOOK ERROR] No se pudo enviar el log:', error);
+        console.error('🔴 [WEBHOOK ERROR] Failed to send log:', error);
     }
 }
