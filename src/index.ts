@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import './database/Redis';
 import { connectDB, sequelize } from './database/db';
-import { PattoClient } from './structures/PattoClient';
+import { CaramelClient } from './structures/CaramelClient';
 import { container } from '@sapphire/framework';
 import { setupVanityWorker } from './workers/VanityWorker';
 import { setupSilentBanWorker } from './workers/SilentBanWorker';
@@ -10,7 +10,7 @@ import { setupMuteWorker } from './workers/MuteWorker';
 
 // Bootstrap ──────────────────
 
-const client = new PattoClient();
+const client = new CaramelClient();
 
 async function bootstrap() {
     try {

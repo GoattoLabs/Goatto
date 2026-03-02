@@ -36,7 +36,7 @@ export function setupVanityWorker() {
         },
         {
             connection: workerConnection as any,
-            prefix: 'patto-vanity',
+            prefix: 'caramel-vanity',
             concurrency: 1,
             lockDuration: 60000,
             lockRenewTime: 30000,
